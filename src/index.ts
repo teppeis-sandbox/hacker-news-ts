@@ -19,15 +19,19 @@ const ID_V = t.number;
 export type ID = t.TypeOf<typeof ID_V>;
 
 // Type and validator for properties common to all Hacker News item types
-const ItemCommonV = t.type(
-  {
-    by: t.string, // username
-    id: ID_V,
-    time: t.number, // seconds since Unix epoch
-    dead: optional(t.boolean),
-    deleted: optional(t.boolean),
-    kids: optional(t.array(ID_V)) // IDs of comments on an item
-  },
+const ItemCommonV = t.intersection(
+  [
+    t.type({
+      by: t.string, // username
+      id: ID_V,
+      time: t.number // seconds since Unix epoch
+    }),
+    t.partial({
+      dead: t.boolean,
+      deleted: t.boolean,
+      kids: t.array(ID_V) // IDs of comments on an item
+    })
+  ],
   "ItemCommon"
 );
 
@@ -44,9 +48,11 @@ const StoryV = t.intersection(
   [
     t.type({
       type: t.literal("story"),
-      descendants: t.number, // number of comments
-      text: optional(t.string), // HTML content if story is a text post
-      url: optional(t.string) // URL of linked article if the story is not text post
+      descendants: t.number // number of comments
+    }),
+    t.partial({
+      text: t.string, // HTML content if story is a text post
+      url: t.string // URL of linked article if the story is not text post
     }),
     ItemCommonV,
     TopLevelV
@@ -58,9 +64,11 @@ export type Story = t.TypeOf<typeof StoryV>;
 const JobV = t.intersection(
   [
     t.type({
-      type: t.literal("job"),
-      text: optional(t.string), // HTML content if job is a text post
-      url: optional(t.string) // URL of linked page if the job is not text post
+      type: t.literal("job")
+    }),
+    t.partial({
+      text: t.string, // HTML content if job is a text post
+      url: t.string // URL of linked page if the job is not text post
     }),
     ItemCommonV,
     TopLevelV
@@ -96,15 +104,13 @@ const CommentV = t.intersection(
 );
 export type Comment = t.TypeOf<typeof CommentV>;
 
-const PollOptV = t.intersection(
-  [
-    t.type({
-      type: t.literal("pollopt"),
-      poll: ID_V, // ID of poll that includes this option
-      score: t.number,
-      text: t.string // HTML content
-    })
-  ],
+const PollOptV = t.type(
+  {
+    type: t.literal("pollopt"),
+    poll: ID_V, // ID of poll that includes this option
+    score: t.number,
+    text: t.string // HTML content
+  },
   "PollOpt"
 );
 export type PollOpt = t.TypeOf<typeof PollOptV>;
@@ -164,6 +170,8 @@ function formatItem(item: Item): string {
       const excerpt =
         item.text.length > 60 ? item.text.slice(0, 60) + "..." : item.text;
       return `${item.by} commented: ${excerpt}`;
+    default:
+      throw new Error();
   }
 }
 
@@ -193,19 +201,6 @@ if (require.main === module) {
 }
 
 /* utility functions */
-
-// Produces a validator that is a union of the given type with `undefined`
-function optional<RT extends t.Any>(
-  type: RT,
-  name: string = `${type.name} | undefined`
-): t.UnionType<
-  [RT, t.UndefinedType],
-  t.TypeOf<RT> | undefined,
-  t.OutputOf<RT> | undefined,
-  t.InputOf<RT> | undefined
-> {
-  return t.union<[RT, t.UndefinedType]>([type, t.undefined], name);
-}
 
 // Apply a validator and get the result in a `Promise`
 function decodeToPromise<T, O, I>(
