@@ -8,3 +8,4 @@ dist/
 
 # Misc
 .DS_Store
+.vscode/
