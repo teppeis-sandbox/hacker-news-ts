@@ -10,12 +10,14 @@
     "@types/node" "*"
 
 "@types/node@*":
-  version "9.4.6"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-9.4.6.tgz#d8176d864ee48753d053783e4e463aec86b8d82e"
+  version "12.0.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.0.0.tgz#d11813b9c0ff8aaca29f04cbc12817f4c7d656e5"
+  integrity sha512-Jrb/x3HT4PTJp6a4avhmJCDEVrPdqLfl3e8GGMbpkGGdwAV5UGlIs4vVEfsHHfylZVOKZWpOqmqFH8CbfOZ6kg==
 
 fp-ts@^1.0.0, fp-ts@^1.0.1:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/fp-ts/-/fp-ts-1.1.0.tgz#641c780a4c38f5a35ca471afb859ec6a5023e610"
+  version "1.17.3"
+  resolved "https://registry.yarnpkg.com/fp-ts/-/fp-ts-1.17.3.tgz#5064afc4bee8ddcaea567479bfc62d527e015825"
+  integrity sha512-r4gHfAWaRrYPsmdzRl1U9CkpbdOi8fPg5F5KiazAadENz5DKdWEaCDPl2Tf92fvkZGD/ekZ3EHu3gtXIVcsXtA==
 
 io-ts-reporters@^0.0.21:
   version "0.0.21"
@@ -25,13 +27,7 @@ io-ts-reporters@^0.0.21:
     fp-ts "^1.0.1"
     io-ts "^1.0.2"
 
-io-ts@^1.0.2:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/io-ts/-/io-ts-1.0.5.tgz#dec6032f8febb4e8a6c614230823accb50f802fe"
-  dependencies:
-    fp-ts "^1.0.0"
-
-io-ts@^1.8.5:
+io-ts@^1.0.2, io-ts@^1.8.5:
   version "1.8.5"
   resolved "https://registry.yarnpkg.com/io-ts/-/io-ts-1.8.5.tgz#2e102f7f518abe17b0f7e7ede0db54a4c4ddc188"
   integrity sha512-4HzDeg7mTygFjFIKh7ajBSanoVaFryYSFI0ocdwndSWl3eWQXhg3wVR0WI+Li5Vq11TIsoIngQszVbN4dy//9A==
