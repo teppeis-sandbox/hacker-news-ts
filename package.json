@@ -19,6 +19,7 @@
   "dependencies": {
     "io-ts": "^1.8.5",
     "io-ts-reporters": "^0.0.21",
-    "node-fetch": "^2.5.0"
+    "node-fetch": "^2.5.0",
+    "runtypes": "^3.2.0"
   }
 }

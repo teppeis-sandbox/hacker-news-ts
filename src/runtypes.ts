@@ -8,119 +8,95 @@
  * Take a look at the accompanying blog post:
  * http://www.olioapps.com/blog/checking-types-against-the-real-world-in-typescript/
  */
-import * as t from "io-ts";
-import { reporter } from "io-ts-reporters";
+import * as r from "runtypes";
 import fetch from "node-fetch";
 
 /* types and validators */
 
 // Type and validator for IDs. This is just an alias for the `number` type.
-const ID_V = t.number;
-export type ID = t.TypeOf<typeof ID_V>;
+const ID_V = r.Number;
+export type ID = r.Static<typeof ID_V>;
 
 // Type and validator for properties common to all Hacker News item types
-const ItemCommonV = t.intersection(
-  [
-    t.type({
-      by: t.string, // username
-      id: ID_V,
-      time: t.number // seconds since Unix epoch
-    }),
-    t.partial({
-      dead: t.boolean,
-      deleted: t.boolean,
-      kids: t.array(ID_V) // IDs of comments on an item
+const ItemCommonV = r
+  .Record({
+    by: r.String, // username
+    id: ID_V,
+    time: r.Number // seconds since Unix epoch
+  })
+  .And(
+    r.Partial({
+      dead: r.Boolean,
+      deleted: r.Boolean,
+      kids: r.Array(ID_V) // IDs of comments on an item
     })
-  ],
-  "ItemCommon"
-);
+  );
 
 // Type and validator for properties common to stories, job postings, and polls
-const TopLevelV = t.type(
-  {
-    score: t.number,
-    title: t.string
-  },
-  "TopLevel"
-);
+const TopLevelV = r.Record({
+  score: r.Number,
+  title: r.String
+});
 
-const StoryV = t.intersection(
-  [
-    t.type({
-      type: t.literal("story"),
-      descendants: t.number // number of comments
-    }),
-    t.partial({
-      text: t.string, // HTML content if story is a text post
-      url: t.string // URL of linked article if the story is not text post
-    }),
-    ItemCommonV,
-    TopLevelV
-  ],
-  "Story"
-);
-export type Story = t.TypeOf<typeof StoryV>;
+const StoryV = r
+  .Record({
+    type: r.Literal("story"),
+    descendants: r.Number // number of comments
+  })
+  .And(
+    r.Partial({
+      text: r.String, // HTML content if story is a text post
+      url: r.String // URL of linked article if the story is not text post
+    })
+  )
+  .And(ItemCommonV)
+  .And(TopLevelV);
+export type Story = r.Static<typeof StoryV>;
 
-const JobV = t.intersection(
-  [
-    t.type({
-      type: t.literal("job")
-    }),
-    t.partial({
-      text: t.string, // HTML content if job is a text post
-      url: t.string // URL of linked page if the job is not text post
-    }),
-    ItemCommonV,
-    TopLevelV
-  ],
-  "Job"
-);
-export type Job = t.TypeOf<typeof JobV>;
+const JobV = r
+  .Record({
+    type: r.Literal("job")
+  })
+  .And(
+    r.Partial({
+      text: r.String, // HTML content if job is a text post
+      url: r.String // URL of linked page if the job is not text post
+    })
+  )
+  .And(ItemCommonV)
+  .And(TopLevelV);
+export type Job = r.Static<typeof JobV>;
 
-const PollV = t.intersection(
-  [
-    t.type({
-      type: t.literal("poll"),
-      descendants: t.number, // number of comments
-      parts: t.array(ID_V)
-    }),
-    ItemCommonV,
-    TopLevelV
-  ],
-  "Poll"
-);
-export type Poll = t.TypeOf<typeof PollV>;
+const PollV = r
+  .Record({
+    type: r.Literal("poll"),
+    descendants: r.Number, // number of comments
+    parts: r.Array(ID_V)
+  })
+  .And(ItemCommonV)
+  .And(TopLevelV);
+export type Poll = r.Static<typeof PollV>;
 
-const CommentV = t.intersection(
-  [
-    t.type({
-      type: t.literal("comment"),
-      parent: ID_V,
-      text: t.string // HTML content
-    }),
-    ItemCommonV
-  ],
-  "Comment"
-);
-export type Comment = t.TypeOf<typeof CommentV>;
+const CommentV = r
+  .Record({
+    type: r.Literal("comment"),
+    parent: ID_V,
+    text: r.String // HTML content
+  })
+  .And(ItemCommonV);
+export type Comment = r.Static<typeof CommentV>;
 
-const PollOptV = t.type(
-  {
-    type: t.literal("pollopt"),
-    poll: ID_V, // ID of poll that includes this option
-    score: t.number,
-    text: t.string // HTML content
-  },
-  "PollOpt"
-);
-export type PollOpt = t.TypeOf<typeof PollOptV>;
+const PollOptV = r.Record({
+  type: r.Literal("pollopt"),
+  poll: ID_V, // ID of poll that includes this option
+  score: r.Number,
+  text: r.String // HTML content
+});
+export type PollOpt = r.Static<typeof PollOptV>;
 
-const ItemV = t.taggedUnion(
-  "type", // the name of the tag property
-  [CommentV, JobV, PollV, PollOptV, StoryV],
-  "Item"
-);
-type Item = t.TypeOf<typeof ItemV>;
+// "type": the name of the tag property
+const ItemV = r.Union(CommentV, JobV, PollV, PollOptV, StoryV);
+type Item = r.Static<typeof ItemV>;
 
 /* functions to fetch and display stories and other items */
 
@@ -129,17 +105,20 @@ export async function fetchItem(id: ID): Promise<Item> {
     `https://hacker-news.firebaseio.com/v0/item/${id}.json`
   );
   const obj = await res.json();
-  return decodeToPromise(ItemV, obj);
+  return ItemV.check(obj);
 }
 
 // If you know the type of the item to be fetched use this function with
 // a validator for that specific type.
-async function fetchItemType<T>(validator: t.Type<T>, id: ID): Promise<T> {
+async function fetchItemType<T extends Item>(
+  validator: r.Runtype<T>,
+  id: ID
+): Promise<T> {
   const res = await fetch(
     `https://hacker-news.firebaseio.com/v0/item/${id}.json`
   );
   const obj = await res.json();
-  return decodeToPromise(validator, obj);
+  return validator.check(obj);
 }
 
 function getTitle(item: Item): string | undefined {
@@ -180,7 +159,7 @@ export async function fetchTopStories(count: number): Promise<Item[]> {
   const res = await fetch(
     "https://hacker-news.firebaseio.com/v0/topstories.json"
   );
-  const ids = await decodeToPromise(t.array(ID_V), await res.json());
+  const ids = r.Array(ID_V).check(await res.json());
   return Promise.all(ids.slice(0, count).map(id => fetchItem(id)));
 }
 
@@ -201,23 +180,6 @@ if (require.main === module) {
   main();
 }
 
-/* utility functions */
-
-// Apply a validator and get the result in a `Promise`
-function decodeToPromise<T, O, I>(
-  validator: t.Type<T, O, I>,
-  input: I
-): Promise<T> {
-  const result = validator.decode(input);
-  return result.fold(
-    errors => {
-      const messages = reporter(result);
-      return Promise.reject(new Error(messages.join("\n")));
-    },
-    value => Promise.resolve(value)
-  );
-}
-
 async function fetchTitle(storyId: number): Promise<string> {
   const res = await fetch(
     `https://hacker-news.firebaseio.com/v0/item/${storyId}.json`
@@ -226,7 +188,7 @@ async function fetchTitle(storyId: number): Promise<string> {
 
   // If the data that is fetched does not match the `StoryV` validator then this
   // line will result in a rejected promise.
-  const story = await decodeToPromise(StoryV, data);
+  const story = StoryV.check(data);
 
   // This line does not type-check because TypeScript can infer from the
   // definition of `StoryV` that `story` does not have a property called
