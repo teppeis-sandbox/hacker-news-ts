@@ -8,120 +8,89 @@
  * Take a look at the accompanying blog post:
  * http://www.olioapps.com/blog/checking-types-against-the-real-world-in-typescript/
  */
-import * as t from "io-ts";
-import { reporter } from "io-ts-reporters";
+import * as joi from "@hapi/joi";
 import fetch from "node-fetch";
-import { DateFromUnixTime } from "io-ts-types/lib/Date/DateFromUnixTime";
 
 /* types and validators */
 
 // Type and validator for IDs. This is just an alias for the `number` type.
-const ID_V = t.number;
-export type ID = t.TypeOf<typeof ID_V>;
+const ID_V = joi.number();
+// TODO
+// export type ID = t.typeOf<typeof ID_V>;
 
 // Type and validator for properties common to all Hacker News item types
-const ItemCommonV = t.intersection(
-  [
-    t.type({
-      by: t.string, // username
-      id: ID_V,
-      time: DateFromUnixTime // seconds since Unix epoch
-    }),
-    t.partial({
-      dead: t.boolean,
-      deleted: t.boolean,
-      kids: t.array(ID_V) // IDs of comments on an item
-    })
-  ],
-  "ItemCommon"
-);
+const ItemCommonV = joi.object().keys({
+  by: joi.string().required(), // username
+  id: ID_V.required(),
+  time: joi.number().required(), // seconds since Unix epoch
+  dead: joi.boolean(),
+  deleted: joi.boolean(),
+  kids: joi.array().items(ID_V) // IDs of comments on an item
+});
 
 // Type and validator for properties common to stories, job postings, and polls
-const TopLevelV = t.type(
+const TopLevelV = joi.object().keys(
   {
-    score: t.number,
-    title: t.string
-  },
-  "TopLevel"
+    score: joi.number().required(),
+    title: joi.string().required()
+  }
 );
 
-const StoryV = t.intersection(
-  [
-    t.type({
-      type: t.literal("story"),
-      descendants: t.number // number of comments
-    }),
-    t.partial({
-      text: t.string, // HTML content if story is a text post
-      url: t.string // URL of linked article if the story is not text post
-    }),
-    ItemCommonV,
-    TopLevelV
-  ],
-  "Story"
-);
-export type Story = t.TypeOf<typeof StoryV>;
+const StoryV =    joi.object().keys({
+      type: joi.valid("story").required(),
+      descendants: joi.number().required(), // number of comments
+      text: joi.string(), // HTML content if story is a text post
+      url: joi.string().uri() // URL of linked article if the story is not text post
+    }).concat(
+    ItemCommonV).concat(
+    TopLevelV);
 
-const JobV = t.intersection(
-  [
-    t.type({
-      type: t.literal("job")
-    }),
-    t.partial({
-      text: t.string, // HTML content if job is a text post
-      url: t.string // URL of linked page if the job is not text post
-    }),
-    ItemCommonV,
-    TopLevelV
-  ],
-  "Job"
-);
-export type Job = t.TypeOf<typeof JobV>;
+// export type Story = joi.object().keysOf<typeof StoryV>;
 
-const PollV = t.intersection(
-  [
-    t.type({
-      type: t.literal("poll"),
-      descendants: t.number, // number of comments
-      parts: t.array(ID_V)
-    }),
-    ItemCommonV,
-    TopLevelV
-  ],
-  "Poll"
-);
-export type Poll = t.TypeOf<typeof PollV>;
+const JobV = 
+    joi.object().keys({
+      type: joi.valid("job").required(),
+      text: joi.string(), // HTML content if job is a text post
+      url: joi.string() // URL of linked page if the job is not text post
+    }).concat(
+    ItemCommonV).concat(
+    TopLevelV);
+// export type Job = joi.object().keysOf<typeof JobV>;
 
-const CommentV = t.intersection(
-  [
-    t.type({
-      type: t.literal("comment"),
-      parent: ID_V,
-      text: t.string // HTML content
-    }),
-    ItemCommonV
-  ],
-  "Comment"
-);
-export type Comment = t.TypeOf<typeof CommentV>;
+const PollV = 
+    joi.object().keys({
+      type: joi.valid("poll").required(),
+      descendants: joi.number().required(), // number of comments
+      parts: joi.array().items(ID_V)
+    }).concat(
+    ItemCommonV).concat(
+    TopLevelV)
+// export type Poll = joi.object().keysOf<typeof PollV>;
 
-const PollOptV = t.type(
+const CommentV = 
+    joi.object().keys({
+      type: joi.valid("comment").required(),
+      parent: ID_V.required(),
+      text: joi.string().required() // HTML content
+    }).concat(
+    ItemCommonV);
+// export type Comment = joi.object().keysOf<typeof CommentV>;
+
+const PollOptV = joi.object().keys(
   {
-    type: t.literal("pollopt"),
-    poll: ID_V, // ID of poll that includes this option
-    score: t.number,
-    text: t.string // HTML content
-  },
-  "PollOpt"
-);
-export type PollOpt = t.TypeOf<typeof PollOptV>;
+    type: joi.valid("pollopt").required(),
+    poll: ID_V.required(), // ID of poll that includes this option
+    score: joi.number().required(),
+    text: joi.string().required() // HTML content
+  });
+// export type PollOpt = joi.object().keysOf<typeof PollOptV>;
 
 const ItemV = t.taggedUnion(
   "type", // the name of the tag property
   [CommentV, JobV, PollV, PollOptV, StoryV],
   "Item"
 );
-type Item = t.TypeOf<typeof ItemV>;
+// type Item = joi.object().keysOf<typeof ItemV>;
 
 /* functions to fetch and display stories and other items */
 
@@ -135,7 +104,7 @@ export async function fetchItem(id: ID): Promise<Item> {
 
 // If you know the type of the item to be fetched use this function with
 // a validator for that specific type.
-async function fetchItemType<T>(validator: t.Type<T>, id: ID): Promise<T> {
+async function fetchItemType<T>(validator: joi.object().keys<T>, id: ID): Promise<T> {
   const res = await fetch(
     `https://hacker-news.firebaseio.com/v0/item/${id}.json`
   );
@@ -206,7 +175,7 @@ if (require.main === module) {
 
 // Apply a validator and get the result in a `Promise`
 function decodeToPromise<T, O, I>(
-  validator: t.Type<T, O, I>,
+  validator: joi.object().keys<T, O, I>,
   input: I
 ): Promise<T> {
   const result = validator.decode(input);

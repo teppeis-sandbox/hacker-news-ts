@@ -12,13 +12,16 @@
     "start": "node dist/index.js"
   },
   "devDependencies": {
+    "@types/hapi__joi": "^15.0.1",
     "@types/node-fetch": "^2.3.3",
     "prettier": "^1.17.0",
     "typescript": "^3.4.5"
   },
   "dependencies": {
+    "@hapi/joi": "^15.0.1",
     "io-ts": "^1.8.5",
     "io-ts-reporters": "^0.0.21",
+    "io-ts-types": "^0.4.7",
     "node-fetch": "^2.5.0",
     "runtypes": "^3.2.0"
   }
