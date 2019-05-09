@@ -7,12 +7,12 @@
   "scripts": {
     "build": "tsc",
     "format": "prettier --write 'src/**/*.ts'",
-    "prestart": "yarn run build"
+    "prestart": "npm run build"
   },
   "devDependencies": {
     "@types/node-fetch": "^2.3.3",
     "prettier": "^1.17.0",
-    "typescript": "^3.3.4000"
+    "typescript": "^3.4.5"
   },
   "dependencies": {
     "@hapi/joi": "^15.0.1",
