@@ -2,14 +2,12 @@
   "name": "hacker-news-ts",
   "version": "1.0.0",
   "description": "Example to demonstrate type-checking API data with TypeScript",
-  "main": "dist/index.js",
   "author": "Jesse Hallett <jesse@sitr.us>",
   "license": "MIT",
   "scripts": {
     "build": "tsc",
     "format": "prettier --write 'src/**/*.ts'",
-    "prestart": "yarn run build",
-    "start": "node dist/index.js"
+    "prestart": "yarn run build"
   },
   "devDependencies": {
     "@types/node-fetch": "^2.3.3",
