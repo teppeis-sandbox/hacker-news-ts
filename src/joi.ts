@@ -19,23 +19,29 @@ const ID_V = joi.number().required();
 type ID = joi.SchemaValue<typeof ID_V>;
 
 // Type and validator for properties common to all Hacker News item types
-const ItemCommonV = joi.object().keys({
-  by: joi.string().required(), // username
-  id: ID_V.required(),
-  time: joi
-    .date()
-    .timestamp("unix")
-    .required(), // seconds since Unix epoch
-  dead: joi.boolean(),
-  deleted: joi.boolean(),
-  kids: joi.array().items(ID_V) // IDs of comments on an item
-});
+const ItemCommonV = joi
+  .object()
+  .keys({
+    by: joi.string().required(), // username
+    id: ID_V.required(),
+    time: joi
+      .date()
+      .timestamp("unix")
+      .required(), // seconds since Unix epoch
+    dead: joi.boolean(),
+    deleted: joi.boolean(),
+    kids: joi.array().items(ID_V) // IDs of comments on an item
+  })
+  .required();
 
 // Type and validator for properties common to stories, job postings, and polls
-const TopLevelV = joi.object().keys({
-  score: joi.number().required(),
-  title: joi.string().required()
-});
+const TopLevelV = joi
+  .object()
+  .keys({
+    score: joi.number().required(),
+    title: joi.string().required()
+  })
+  .required();
 
 const StoryV = joi
   .object()
@@ -45,8 +51,11 @@ const StoryV = joi
       .valid("story")
       .required(),
     descendants: joi.number().required(), // number of comments
-    text: joi.string(), // HTML content if story is a text post
-    url: joi.string().uri() // URL of linked article if the story is not text post
+    text: joi.string().allow(""), // HTML content if story is a text post
+    url: joi
+      .string()
+      .uri()
+      .allow("") // URL of linked article if the story is not text post
   })
   .concat(ItemCommonV)
   .concat(TopLevelV)
@@ -60,8 +69,8 @@ const JobV = joi
       .string()
       .valid("job")
       .required(),
-    text: joi.string(), // HTML content if job is a text post
-    url: joi.string() // URL of linked page if the job is not text post
+    text: joi.string().allow(""), // HTML content if job is a text post
+    url: joi.string().allow("") // URL of linked page if the job is not text post
   })
   .concat(ItemCommonV)
   .concat(TopLevelV)
